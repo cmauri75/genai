@@ -1,0 +1,12 @@
+Sviluppa un'applicazione web per la pianificazione settimanale dei pasti, la gestione della lista della spesa e il monitoraggio del budget alimentare. L'applicazione deve:
+1. Permettere di pianificare i pasti per ogni giorno della settimana (colazione, pranzo, cena)
+2. Generare automaticamente una lista della spesa basata sui pasti pianificati
+3. Tracciare le spese alimentari e confrontarle con un budget mensile
+4. Consentire di salvare ricette preferite e includerle nella pianificazione
+5. Suggerire ricette in base agli ingredienti già disponibili in dispensa
+L'interfaccia dovrebbe essere semplice da usare su mobile e desktop con:
+• Un calendario visuale per la pianificazione settimanale
+• Una lista della spesa interattiva che si possa spuntare durante l'acquisto
+• Grafici che mostrano l'andamento delle spese rispetto al budget
+• Una funzione di ricerca per trovare rapidamente ricette e ingredienti
+Crea un prototipo funzionante con dati di esempio e mostrami come potrei usarlo nella vita di tutti i giorni per risparmiare tempo, denaro e ridurre lo spreco alimentare.

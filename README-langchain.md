@@ -19,3 +19,14 @@ Fornisce strumenti e astrazioni per combinare modelli di linguaggio con altre fo
 In sintesi, LangChain riduce la complessità dello sviluppo, migliorando la produttività e consentendo di creare applicazioni più potenti e modulari rispetto all'uso diretto delle API di un LLM.
 
 ![](Course/1.LangChain.png)
+
+* Interfaccia LLM: da un'interfaccia comune per i vari LLM
+* Ruoli: l'interfaccia permette di distinguere gli input. 
+  * Sistema da il contesto
+  * Utente da la richiesta
+  * Assistente è utilizzato per il contenuto generato dal modello (TBD)
+* L'interfaccia invia non solo il prompt ma diversi messaggi associati a ogni ruolo
+  * HumanMessage: messaggio inviato dall'umano col ruolo utente
+  * HiMessage: messaggio inviato dall'IA con cui l'uomo interagisce col ruolo assistente
+  * SystemMessage: imposta le istruzioni che deve seguire il modello col ruolo sistema, posso usarla per preconfigurare l'IA così che guido il comportamento del modello avendo una risposta prevedibile.
+  * ChatMessage: consente l'impostazione arbitraria di un ruolo

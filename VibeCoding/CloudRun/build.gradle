@@ -1,0 +1,37 @@
+plugins {
+    id 'org.springframework.boot' version '3.2.3'  //Usa la versione di Spring Boot che stai usando
+    id 'io.spring.dependency-management' version '1.1.4' //Gestione delle dipendenze di Spring
+    id 'java'
+}
+
+group = 'com.example'  //Il tuo group ID
+version = '0.0.1-SNAPSHOT' //La tua versione
+
+java {
+    sourceCompatibility = '17'  //La tua versione di Java
+    targetCompatibility = '17'
+}
+
+//Configura il repository Maven da cui scaricare le dipendenze
+repositories {
+    mavenCentral()
+}
+
+//Definisce le dipendenze del progetto
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+}
+
+//Configura il plugin di Spring Boot per creare un archivio eseguibile (JAR o WAR)
+bootJar {
+    archiveFileName = 'log-service.jar' //Nome che vuoi dare al jar
+}
+
+//Compila i test
+test {
+    useJUnitPlatform()
+}

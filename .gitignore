@@ -31,3 +31,5 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+/VibeCoding/CloudRun/.gradle/
+/VibeCoding/CloudRun/build/
