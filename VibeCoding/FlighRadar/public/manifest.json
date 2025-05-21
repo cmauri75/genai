@@ -1,0 +1,35 @@
+// public/manifest.json
+{
+  "name": "Flight Tracker Pro",
+  "short_name": "FlightTracker",
+  "description": "Un'applicazione per tracciare i voli in tempo reale.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1931",
+  "theme_color": "#0a1931",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "images/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "images/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "images/icon-maskable-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "images/icon-maskable-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

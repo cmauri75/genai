@@ -5,12 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flight Tracker Pro</title>
 
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0a1931">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="FlightTracker">
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossorigin=""/>
@@ -437,21 +431,6 @@
             showMessage('error', error.message || "Si è verificato un errore imprevisto. Riprova.");
         }
     });
-
-    // Registrazione del Service Worker per PWA
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(registration => {
-                    alert('Service Worker registrato con successo! Ora puoi utilizzare la modalità offline.');
-                    console.log('Service Worker registrato con successo:', registration);
-                })
-                .catch(error => {
-                    alert('errore!'+ error);
-                    console.log('Registrazione Service Worker fallita:', error);
-                });
-        });
-    }
 </script>
 </body>
 </html>

@@ -24,6 +24,10 @@ if (!AVIATIONSTACK_API_KEY) {
     console.log("Per favore, imposta la tua chiave API nella sezione 'Secrets' di Replit.");
 }
 
+// Middleware per servire file statici (come il nostro HTML, CSS, JS e immagini)
+app.use(express.static('public'));
+
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
