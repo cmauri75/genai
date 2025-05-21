@@ -33,3 +33,5 @@ coverage
 *.sw?
 /VibeCoding/CloudRun/.gradle/
 /VibeCoding/CloudRun/build/
+
+VibeCoding/FlighRadar/.env
