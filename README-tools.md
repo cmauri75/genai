@@ -1,6 +1,6 @@
 # Useful tools for the project
 
-1. Perplexity, sostituisce goole
+1. Perplexity, sostituisce google
 2. Copilot, dentro bard. Lo strumento "template"  ti aiuta a costruire i prompt
 3. There's an AI for that: http://theresanaiforthat.com
    4. ChatGCP 4+
@@ -13,5 +13,3 @@
 6. Esempio di notebook per effettuare trascrizione test di video yt usando whisper di openai: https://colab.research.google.com/drive/1wnil7Bo84XtPvNnPqKdtIfcbbnoUChL-?usp=sharing&authuser=0#scrollTo=VLgZy21VX0Gr
 7. 
 
-
-## Next steps
