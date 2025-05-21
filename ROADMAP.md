@@ -21,6 +21,7 @@
        * Ora vorrei anche aggiungere una mappa, uso prompt2.src e aggiorno i file come indicato. Funziona subito
        * Ora provo a migliorare la grafica con prompt3.src e lui fa al volo
        * Ora voglio creare una app android, mi consiglia sia la PWA che una WebView
+       * A questo punto uso cloudrun per deployare la mia app
    
 1. seguire le live stregatto dall'inizio replicando gli esempi, passando al progetto aiChat
 

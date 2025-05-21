@@ -1,0 +1,26 @@
+.env
+# .dockerignore
+
+# Ignora le dipendenze locali di Node, verranno installate nel container
+node_modules
+
+# Ignora i log di npm
+npm-debug.log
+npm-debug.*.log
+
+# Ignora file specifici del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Ignora file di configurazione specifici dell'IDE (opzionale)
+.vscode/
+.idea/
+
+# Ignora il Dockerfile stesso e .dockerignore se sono nella root
+Dockerfile
+.dockerignore
+
+# Ignora altri file che non vuoi nell'immagine
+# Ad esempio, file di documentazione specifici per lo sviluppo,
+# script di build locali non necessari nel container, ecc.
+# README.md (se non vuoi che sia nell'immagine)
