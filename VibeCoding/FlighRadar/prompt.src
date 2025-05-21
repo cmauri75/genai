@@ -1,0 +1,18 @@
+Assumi il ruolo di un software engineer esperto nello sviluppo di applicazioni web.
+Devo creare un'applicazione web in node.js che funzioni come un flight tracker, utilizzando le API di AviationStack. L'endpoint da utilizzare è:
+https://api.aviationstack.com/v1/flights
+Esempio: http://api.aviationstack.com/v1/flights?
+access_key=LA_TUA_CHIAVE_API&flight_iata=AZ123
+L'applicazione deve permettere di cercare voli utilizzando il codice IATA, come ad esempio: TK900. Quando l'utente effettua una ricerca, voglio visualizzare le seguenti informazioni:
+Data del volo (flight_date)
+Stato del volo (flight_status)
+Aeroporto di partenza
+Aeroporto di arrivo
+Nome della compagnia aerea (airline)
+Orario di arrivo schedulato (arrival.scheduled)
+Orario di arrivo stimato (arrival.estimated)
+In allegato troverai un esempio di risposta delle API per riferimento.
+
+Parto completamente da zero, quindi ho bisogno di una guida dettagliata passo-passo.
+Sappi che voglio creare la mia applicazione usando Replit.
+Quando scrivi il codice, preoccupati di printare dei messaggi che, in caso di errore, ci permettano di risolvere il problema.

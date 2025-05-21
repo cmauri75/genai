@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Tracker</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="text"] { padding: 10px; width: calc(100% - 22px); margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        #flight-info { margin-top: 20px; padding: 15px; background-color: #e9ecef; border-radius: 4px; }
+        #flight-info p { margin: 8px 0; }
+        .error-message { color: red; font-weight: bold; }
+        .loading-message { color: #007bff; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Flight Tracker ✈️</h1>
+    <form id="flight-search-form">
+        <label for="flightIata">Inserisci Codice IATA del Volo (es. UA90):</label>
+        <input type="text" id="flightIata" name="flightIata" required>
+        <button type="submit">Cerca Volo</button>
+    </form>
+
+    <div id="loading-message" style="display:none;">Ricerca in corso... attendere prego.</div>
+    <div id="error-message" class="error-message" style="display:none;"></div>
+    <div id="flight-info" style="display:none;">
+        <h2>Dettagli del Volo:</h2>
+        <p><strong>Data del Volo:</strong> <span id="flight_date"></span></p>
+        <p><strong>Stato del Volo:</strong> <span id="flight_status"></span></p>
+        <p><strong>Aeroporto di Partenza:</strong> <span id="departure_airport"></span></p>
+        <p><strong>Aeroporto di Arrivo:</strong> <span id="arrival_airport"></span></p>
+        <p><strong>Compagnia Aerea:</strong> <span id="airline_name"></span></p>
+        <p><strong>Orario Arrivo Schedulato:</strong> <span id="arrival_scheduled"></span></p>
+        <p><strong>Orario Arrivo Stimato:</strong> <span id="arrival_estimated"></span></p>
+    </div>
+</div>
+
+<script>
+    document.getElementById('flight-search-form').addEventListener('submit', async function(event) {
+        event.preventDefault(); // Evita il submit tradizionale del form
+
+        const flightIata = document.getElementById('flightIata').value.trim().toUpperCase();
+        const flightInfoDiv = document.getElementById('flight-info');
+        const errorMessageDiv = document.getElementById('error-message');
+        const loadingMessageDiv = document.getElementById('loading-message');
+
+        // Reset e messaggi
+        flightInfoDiv.style.display = 'none';
+        errorMessageDiv.style.display = 'none';
+        errorMessageDiv.textContent = '';
+        loadingMessageDiv.style.display = 'block';
+
+        if (!flightIata) {
+            errorMessageDiv.textContent = "Per favore, inserisci un codice IATA del volo.";
+            errorMessageDiv.style.display = 'block';
+            loadingMessageDiv.style.display = 'none';
+            return;
+        }
+
+        try {
+            console.log(`Frontend: Invio richiesta per IATA: ${flightIata}`);
+            const response = await fetch('/search-flight', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `flightIata=${encodeURIComponent(flightIata)}`
+            });
+
+            loadingMessageDiv.style.display = 'none';
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: `Errore HTTP: ${response.status} ${response.statusText}. Nessun dettaglio JSON.` }));
+                console.error("Frontend: Errore dalla risposta del server:", errorData);
+                let displayError = errorData.message || `Errore nella ricerca del volo. Status: ${response.status}`;
+                if(errorData.details && errorData.details.error && errorData.details.error.message) {
+                    displayError = `Errore dall'API: ${errorData.details.error.message}`;
+                } else if (errorData.details && typeof errorData.details === 'string') {
+                    displayError = errorData.details;
+                }
+                errorMessageDiv.textContent = displayError;
+                errorMessageDiv.style.display = 'block';
+                return;
+            }
+
+            const data = await response.json();
+            console.log("Frontend: Dati ricevuti dal server:", data);
+
+            if (data.message) { // Messaggio di errore gestito dal backend (es. volo non trovato)
+                errorMessageDiv.textContent = data.message;
+                errorMessageDiv.style.display = 'block';
+            } else {
+                document.getElementById('flight_date').textContent = data.flight_date || 'N/D';
+                document.getElementById('flight_status').textContent = data.flight_status || 'N/D';
+                document.getElementById('departure_airport').textContent = data.departure_airport || 'N/D';
+                document.getElementById('arrival_airport').textContent = data.arrival_airport || 'N/D';
+                document.getElementById('airline_name').textContent = data.airline_name || 'N/D';
+                document.getElementById('arrival_scheduled').textContent = data.arrival_scheduled ? new Date(data.arrival_scheduled).toLocaleString() : 'N/D';
+                document.getElementById('arrival_estimated').textContent = data.arrival_estimated ? new Date(data.arrival_estimated).toLocaleString() : 'N/D';
+                flightInfoDiv.style.display = 'block';
+            }
+
+        } catch (error) {
+            console.error("Frontend: Errore durante la fetch:", error);
+            loadingMessageDiv.style.display = 'none';
+            errorMessageDiv.textContent = `Errore di comunicazione con il server: ${error.message}`;
+            errorMessageDiv.style.display = 'block';
+        }
+    });
+</script>
+</body>
+</html>

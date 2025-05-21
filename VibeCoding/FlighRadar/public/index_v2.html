@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Tracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="text"] { padding: 10px; width: calc(100% - 22px); margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        #flight-info-details { margin-top: 20px; padding: 15px; background-color: #e9ecef; border-radius: 4px; }
+        #flight-info-details p { margin: 8px 0; }
+        .error-message { color: red; font-weight: bold; }
+        .loading-message { color: #007bff; }
+        /* Stile per il contenitore della mappa */
+        #map-container { margin-top: 20px; }
+        #map { height: 400px; width: 100%; border-radius: 4px; border: 1px solid #ddd; }
+        #map-message { margin-top: 10px; font-style: italic; color: #555;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Flight Tracker ✈️</h1>
+    <form id="flight-search-form">
+        <label for="flightIata">Inserisci Codice IATA del Volo (es. UA90):</label>
+        <input type="text" id="flightIata" name="flightIata" required>
+        <button type="submit">Cerca Volo</button>
+    </form>
+
+    <div id="loading-message" style="display:none;">Ricerca in corso... attendere prego.</div>
+    <div id="error-message" class="error-message" style="display:none;"></div>
+
+    <div id="flight-info-details" style="display:none;">
+        <h2>Dettagli del Volo:</h2>
+        <p><strong>Data del Volo:</strong> <span id="flight_date"></span></p>
+        <p><strong>Stato del Volo:</strong> <span id="flight_status"></span></p>
+        <p><strong>Aeroporto di Partenza:</strong> <span id="departure_airport"></span></p>
+        <p><strong>Aeroporto di Arrivo:</strong> <span id="arrival_airport"></span></p>
+        <p><strong>Compagnia Aerea:</strong> <span id="airline_name"></span></p>
+        <p><strong>Orario Arrivo Schedulato:</strong> <span id="arrival_scheduled"></span></p>
+        <p><strong>Orario Arrivo Stimato:</strong> <span id="arrival_estimated"></span></p>
+    </div>
+
+    <div id="map-container" style="display:none;">
+        <h2>Posizione Live del Volo:</h2>
+        <div id="map"></div>
+        <p id="map-message"></p>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+<script>
+    const flightInfoDetailsDiv = document.getElementById('flight-info-details');
+    const errorMessageDiv = document.getElementById('error-message');
+    const loadingMessageDiv = document.getElementById('loading-message');
+    const mapContainerDiv = document.getElementById('map-container');
+    const mapDiv = document.getElementById('map');
+    const mapMessageP = document.getElementById('map-message');
+
+    let map = null; // Variabile per memorizzare l'istanza della mappa
+    let marker = null; // Variabile per memorizzare il marker
+
+    function initializeMap(lat, lon) {
+        if (!map) { // Inizializza la mappa solo se non è già stata creata
+            console.log(`Inizializzazione mappa a Lat: ${lat}, Lon: ${lon}`);
+            map = L.map('map').setView([lat, lon], 7); // Il secondo parametro è il livello di zoom
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        } else {
+            // Se la mappa esiste già, semplicemente aggiorna la vista e il marker
+            map.setView([lat, lon], map.getZoom()); // Mantiene lo zoom attuale o impostane uno nuovo
+            console.log(`Aggiornamento vista mappa a Lat: ${lat}, Lon: ${lon}`);
+        }
+
+        // Rimuovi il marker precedente se esiste
+        if (marker) {
+            marker.remove();
+        }
+        // Aggiungi un nuovo marker
+        marker = L.marker([lat, lon]).addTo(map)
+            .bindPopup('Posizione attuale del volo.')
+            .openPopup();
+
+        mapContainerDiv.style.display = 'block';
+        mapMessageP.textContent = '';
+        mapDiv.style.display = 'block';
+    }
+
+    document.getElementById('flight-search-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const flightIata = document.getElementById('flightIata').value.trim().toUpperCase();
+
+        // Reset UI
+        flightInfoDetailsDiv.style.display = 'none';
+        errorMessageDiv.style.display = 'none';
+        errorMessageDiv.textContent = '';
+        mapContainerDiv.style.display = 'none';
+        mapDiv.style.display = 'none';
+        mapMessageP.textContent = '';
+        loadingMessageDiv.style.display = 'block';
+
+        if (map && typeof map.remove === 'function') {
+            // Se si vuole distruggere la mappa precedente per ricrearla (utile se ci sono problemi di stato)
+            // marker = null; // Assicurati che il marker venga resettato
+            // map.remove();
+            // map = null;
+            // console.log("Mappa precedente rimossa.");
+        }
+
+
+        if (!flightIata) {
+            errorMessageDiv.textContent = "Per favore, inserisci un codice IATA del volo.";
+            errorMessageDiv.style.display = 'block';
+            loadingMessageDiv.style.display = 'none';
+            return;
+        }
+
+        try {
+            console.log(`Frontend: Invio richiesta per IATA: ${flightIata}`);
+            const response = await fetch('/search-flight', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `flightIata=${encodeURIComponent(flightIata)}`
+            });
+
+            loadingMessageDiv.style.display = 'none';
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: `Errore HTTP: ${response.status} ${response.statusText}.` }));
+                console.error("Frontend: Errore dalla risposta del server:", errorData);
+                let displayError = errorData.message || `Errore nella ricerca del volo. Status: ${response.status}`;
+                if(errorData.details && errorData.details.error && errorData.details.error.message) {
+                    displayError = `Errore dall'API: ${errorData.details.error.message}`;
+                } else if (errorData.details && typeof errorData.details === 'string') {
+                    displayError = errorData.details;
+                }
+                errorMessageDiv.textContent = displayError;
+                errorMessageDiv.style.display = 'block';
+                return;
+            }
+
+            const data = await response.json();
+            console.log("Frontend: Dati ricevuti dal server:", data);
+
+            if (data.message) {
+                errorMessageDiv.textContent = data.message;
+                errorMessageDiv.style.display = 'block';
+            } else {
+                document.getElementById('flight_date').textContent = data.flight_date || 'N/D';
+                document.getElementById('flight_status').textContent = data.flight_status || 'N/D';
+                document.getElementById('departure_airport').textContent = data.departure_airport || 'N/D';
+                document.getElementById('arrival_airport').textContent = data.arrival_airport || 'N/D';
+                document.getElementById('airline_name').textContent = data.airline_name || 'N/D';
+                document.getElementById('arrival_scheduled').textContent = data.arrival_scheduled ? new Date(data.arrival_scheduled).toLocaleString() : 'N/D';
+                document.getElementById('arrival_estimated').textContent = data.arrival_estimated ? new Date(data.arrival_estimated).toLocaleString() : 'N/D';
+                flightInfoDetailsDiv.style.display = 'block';
+
+                // Gestione della mappa
+                if (data.live && typeof data.live.latitude === 'number' && typeof data.live.longitude === 'number') {
+                    console.log("Frontend: Dati live disponibili, inizializzazione/aggiornamento mappa.", data.live);
+                    initializeMap(data.live.latitude, data.live.longitude);
+                    if(data.live.updated) {
+                        mapMessageP.textContent = `Posizione aggiornata a: ${new Date(data.live.updated).toLocaleString()}`;
+                    } else {
+                        mapMessageP.textContent = `Lat: ${data.live.latitude.toFixed(4)}, Lon: ${data.live.longitude.toFixed(4)}`;
+                    }
+                } else {
+                    console.log("Frontend: Dati live non disponibili.");
+                    mapContainerDiv.style.display = 'block'; // Mostra comunque il contenitore
+                    mapDiv.style.display = 'none'; // Ma nascondi la mappa effettiva
+                    mapMessageP.textContent = 'Dati di posizione live non disponibili per questo volo.';
+                }
+            }
+
+        } catch (error) {
+            console.error("Frontend: Errore durante la fetch:", error);
+            loadingMessageDiv.style.display = 'none';
+            errorMessageDiv.textContent = `Errore di comunicazione con il server: ${error.message}`;
+            errorMessageDiv.style.display = 'block';
+        }
+    });
+</script>
+</body>
+</html>

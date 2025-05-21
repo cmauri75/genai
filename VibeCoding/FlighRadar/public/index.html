@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Tracker Pro</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #0a1931; /* Blu scuro */
+            --secondary-color: #185adb; /* Blu acceso */
+            --accent-color: #ffc947; /* Giallo/Oro per accenti */
+            --light-gray-color: #f0f2f5; /* Sfondo leggermente grigio */
+            --text-color: #333;
+            --text-color-light: #f8f9fa;
+            --border-color: #dee2e6;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            background-color: var(--light-gray-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
+            padding: 1rem 2rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+        .header h1 .fa-plane-departure {
+            color: var(--accent-color);
+            margin-right: 10px;
+        }
+
+        .main-container {
+            flex: 1;
+            max-width: 1000px;
+            width: 90%;
+            margin: 2rem auto;
+            padding: 1.5rem;
+        }
+
+        .search-section {
+            background-color: var(--card-bg);
+            padding: 1.5rem 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .search-section label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .search-section input[type="text"] {
+            width: calc(100% - 120px); /* larghezza - padding - larghezza bottone */
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            margin-right: 0.5rem;
+            transition: border-color 0.3s ease;
+        }
+        .search-section input[type="text"]:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(24, 138, 219, 0.25);
+        }
+
+        .search-section button {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--secondary-color);
+            color: var(--text-color-light);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+        .search-section button:hover {
+            background-color: #124aa1; /* Un blu leggermente più scuro per l'hover */
+        }
+        .search-section button .fa-search {
+            margin-right: 8px;
+        }
+
+        .message-area {
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+        .message-area.loading-message {
+            color: var(--secondary-color);
+            background-color: #e7f3ff;
+        }
+        .message-area.error-message {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Inizialmente una colonna */
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 992px) { /* Per schermi più grandi, due colonne */
+            .results-grid {
+                grid-template-columns: 1fr 1fr; /* Dettagli e mappa affiancati */
+            }
+        }
+
+        .flight-details-card, .map-card {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .flight-details-card h2, .map-card h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        .flight-details-card h2 .fa-info-circle,
+        .map-card h2 .fa-map-marked-alt {
+            color: var(--secondary-color);
+            margin-right: 8px;
+        }
+
+        .flight-details-card p {
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+        }
+        .flight-details-card p strong {
+            font-weight: 500;
+            min-width: 180px; /* Allinea i valori */
+            display: inline-block;
+        }
+        .flight-details-card .status {
+            font-weight: bold;
+            padding: 0.2em 0.5em;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .status.cancelled { background-color: #ffebee; color: #c62828; }
+        .status.scheduled, .status.active, .status.en-route { background-color: #e8f5e9; color: #2e7d32; }
+        .status.landed { background-color: #e3f2fd; color: #1565c0; }
+        .status.unknown { background-color: #f5f5f5; color: #616161; }
+
+
+        #map {
+            height: 400px; /* Altezza mappa consistente */
+            width: 100%;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        #map-message {
+            margin-top: 1rem;
+            font-style: italic;
+            color: #555;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
+            font-size: 0.9rem;
+            margin-top: auto; /* Spinge il footer in basso */
+        }
+        .footer p { margin: 0; }
+
+        /* Nascondi elementi inizialmente */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <h1><i class="fas fa-plane-departure"></i>Flight Tracker Pro</h1>
+</header>
+
+<main class="main-container">
+    <section class="search-section">
+        <form id="flight-search-form">
+            <label for="flightIata">Inserisci il Codice IATA del Volo</label>
+            <div>
+                <input type="text" id="flightIata" name="flightIata" placeholder="Es. BA245, U21709" required>
+                <button type="submit"><i class="fas fa-search"></i>Cerca</button>
+            </div>
+        </form>
+    </section>
+
+    <div id="loading-message" class="message-area loading-message hidden">
+        <i class="fas fa-spinner fa-spin"></i> Ricerca in corso... attendere prego.
+    </div>
+    <div id="error-message" class="message-area error-message hidden"></div>
+
+    <div id="results-container" class="results-grid hidden">
+        <div id="flight-info-card" class="flight-details-card">
+            <h2><i class="fas fa-info-circle"></i>Dettagli del Volo</h2>
+            <p><strong>Data del Volo:</strong> <span id="flight_date"></span></p>
+            <p><strong>Stato del Volo:</strong> <span id="flight_status" class="status"></span></p>
+            <p><strong>Aeroporto di Partenza:</strong> <span id="departure_airport"></span></p>
+            <p><strong>Aeroporto di Arrivo:</strong> <span id="arrival_airport"></span></p>
+            <p><strong>Compagnia Aerea:</strong> <span id="airline_name"></span></p>
+            <p><strong>Orario Arrivo Schedulato:</strong> <span id="arrival_scheduled"></span></p>
+            <p><strong>Orario Arrivo Stimato:</strong> <span id="arrival_estimated"></span></p>
+        </div>
+
+        <div id="map-card" class="map-card">
+            <h2><i class="fas fa-map-marked-alt"></i>Posizione Live</h2>
+            <div id="map"></div>
+            <p id="map-message"></p>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <p>&copy; 2024-2025 Flight Tracker Pro. Dati forniti da AviationStack.</p>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+<script>
+    const flightSearchForm = document.getElementById('flight-search-form');
+    const resultsContainer = document.getElementById('results-container');
+    const flightInfoCard = document.getElementById('flight-info-card');
+    const mapCard = document.getElementById('map-card');
+    const mapDiv = document.getElementById('map');
+    const mapMessageP = document.getElementById('map-message');
+
+    const loadingMessageDiv = document.getElementById('loading-message');
+    const errorMessageDiv = document.getElementById('error-message');
+
+    let map = null;
+    let marker = null;
+
+    function initializeMap(lat, lon, flightDetails) {
+        if (!map) {
+            map = L.map('map').setView([lat, lon], 7);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        } else {
+            map.setView([lat, lon], map.getZoom());
+        }
+
+        if (marker) {
+            marker.remove();
+        }
+
+        // Icona aereo personalizzata (opzionale, ma carina)
+        const planeIcon = L.divIcon({
+            html: '<i class="fas fa-plane" style="font-size: 24px; color: var(--secondary-color); transform: rotate(0deg);"></i>', // La rotazione si può aggiornare con flightInfo.live.direction
+            className: 'plane-marker', // Per non avere stili di default del divIcon
+            iconSize: [24, 24],
+            iconAnchor: [12, 12] // Centra l'icona
+        });
+
+        // Se abbiamo la direzione, ruotiamo l'icona
+        if (flightDetails.live && typeof flightDetails.live.direction === 'number') {
+            planeIcon.options.html = `<i class="fas fa-plane" style="font-size: 24px; color: var(--secondary-color); transform: rotate(${flightDetails.live.direction - 90}deg);"></i>`; // -90 perché l'icona di FontAwesome di base punta a destra
+        }
+
+
+        marker = L.marker([lat, lon], { icon: planeIcon }).addTo(map)
+            .bindPopup(`<b>${flightDetails.airline_name || ''} ${flightDetails.flight_iata || ''}</b><br>Posizione attuale.<br>Alt: ${flightDetails.live && flightDetails.live.altitude ? flightDetails.live.altitude + 'm' : 'N/D'}`)
+            .openPopup();
+
+        mapCard.classList.remove('hidden');
+        mapMessageP.textContent = '';
+        mapDiv.style.display = 'block';
+    }
+
+    function displayFlightData(data) {
+        document.getElementById('flight_date').textContent = data.flight_date ? new Date(data.flight_date).toLocaleDateString() : 'N/D';
+
+        const statusSpan = document.getElementById('flight_status');
+        statusSpan.textContent = data.flight_status ? data.flight_status.replace("_", " ").toUpperCase() : 'N/D';
+        statusSpan.className = 'status'; // reset class
+        if (data.flight_status) {
+            statusSpan.classList.add(data.flight_status.toLowerCase());
+        } else {
+            statusSpan.classList.add('unknown');
+        }
+
+        document.getElementById('departure_airport').textContent = data.departure_airport || 'N/D';
+        document.getElementById('arrival_airport').textContent = data.arrival_airport || 'N/D';
+        document.getElementById('airline_name').textContent = data.airline_name || 'N/D';
+
+        const scheduled = data.arrival_scheduled ? new Date(data.arrival_scheduled).toLocaleString() : 'N/D';
+        const estimated = data.arrival_estimated ? new Date(data.arrival_estimated).toLocaleString() : 'N/D';
+        document.getElementById('arrival_scheduled').textContent = scheduled;
+        document.getElementById('arrival_estimated').textContent = estimated;
+
+        resultsContainer.classList.remove('hidden');
+        flightInfoCard.classList.remove('hidden');
+
+        // Gestione Mappa
+        if (data.live && typeof data.live.latitude === 'number' && typeof data.live.longitude === 'number') {
+            const flightDetailsForMarker = { // Passiamo dati utili al marker
+                airline_name: data.airline_name,
+                flight_iata: data.flight_iata_original || document.getElementById('flightIata').value.trim().toUpperCase(), // Passiamo lo IATA cercato
+                live: data.live
+            };
+            initializeMap(data.live.latitude, data.live.longitude, flightDetailsForMarker);
+            if(data.live.updated) {
+                mapMessageP.textContent = `Posizione aggiornata alle: ${new Date(data.live.updated).toLocaleTimeString()}`;
+            } else {
+                mapMessageP.textContent = `Lat: ${data.live.latitude.toFixed(4)}, Lon: ${data.live.longitude.toFixed(4)}`;
+            }
+        } else {
+            mapCard.classList.remove('hidden'); // Mostra la card della mappa
+            mapDiv.style.display = 'none';    // Ma nascondi la mappa effettiva
+            mapMessageP.textContent = 'Dati di posizione live non disponibili per questo volo.';
+        }
+    }
+
+    function showMessage(type, message) {
+        loadingMessageDiv.classList.add('hidden');
+        errorMessageDiv.classList.add('hidden');
+        resultsContainer.classList.add('hidden');
+
+        if (type === 'loading') {
+            loadingMessageDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${message}`;
+            loadingMessageDiv.classList.remove('hidden');
+        } else if (type === 'error') {
+            errorMessageDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            errorMessageDiv.classList.remove('hidden');
+        }
+    }
+
+    flightSearchForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const flightIataInput = document.getElementById('flightIata');
+        const flightIata = flightIataInput.value.trim().toUpperCase();
+
+        showMessage('loading', 'Ricerca in corso...');
+        mapCard.classList.add('hidden'); // Nascondi card mappa all'inizio di una nuova ricerca
+        flightInfoCard.classList.add('hidden'); // Nascondi card dettagli
+
+        // Pulisci il contenuto precedente della mappa se esiste
+        if (map && typeof map.remove === 'function') {
+            // Potresti voler rimuovere completamente la mappa per evitare stati residui
+            // marker = null;
+            // map.remove();
+            // map = null;
+        }
+        mapDiv.style.display = 'none';
+        mapMessageP.textContent = '';
+
+
+        if (!flightIata) {
+            showMessage('error', "Per favore, inserisci un codice IATA del volo.");
+            return;
+        }
+
+        try {
+            const response = await fetch('/search-flight', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `flightIata=${encodeURIComponent(flightIata)}`
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: `Errore HTTP: ${response.status} ${response.statusText}. Riprova.` }));
+                let displayError = errorData.message || `Errore nella ricerca del volo (Status: ${response.status}).`;
+                if(errorData.details && errorData.details.error && errorData.details.error.message) {
+                    displayError = `Errore API: ${errorData.details.error.message}`;
+                }
+                throw new Error(displayError);
+            }
+
+            const data = await response.json();
+            loadingMessageDiv.classList.add('hidden');
+
+            if (data.message) { // Messaggio di errore gestito dal backend (es. volo non trovato)
+                showMessage('error', data.message);
+            } else {
+                errorMessageDiv.classList.add('hidden');
+                // Aggiungiamo lo IATA cercato ai dati per usarlo nel popup del marker
+                data.flight_iata_original = flightIata;
+                displayFlightData(data);
+            }
+
+        } catch (error) {
+            console.error("Frontend: Errore durante la fetch o l'elaborazione:", error);
+            showMessage('error', error.message || "Si è verificato un errore imprevisto. Riprova.");
+        }
+    });
+</script>
+</body>
+</html>

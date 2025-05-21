@@ -1,0 +1,60 @@
+{
+  "flight_date": "2025-05-21",
+  "flight_status": "scheduled",
+  "departure": {
+    "airport": "Ted Stevens Anchorage International Airport",
+    "timezone": "America/Anchorage",
+    "iata": "ANC",
+    "icao": "PANC",
+    "terminal": null,
+    "gate": null,
+    "delay": 4,
+    "scheduled": "2025-05-21T03:35:00+00:00",
+    "estimated": "2025-05-21T03:35:00+00:00",
+    "actual": "2025-05-21T03:39:00+00:00",
+    "estimated_runway": "2025-05-21T03:39:00+00:00",
+    "actual_runway": "2025-05-21T03:39:00+00:00"
+  },
+  "arrival": {
+    "airport": "Chicago O'hare International",
+    "timezone": "America/Chicago",
+    "iata": "ORD",
+    "icao": "KORD",
+    "terminal": "1",
+    "gate": null,
+    "baggage": null,
+    "scheduled": "2025-05-21T12:10:00+00:00",
+    "delay": null,
+    "estimated": null,
+    "actual": null,
+    "estimated_runway": null,
+    "actual_runway": null
+  },
+  "airline": {
+    "name": "Kalitta Air",
+    "iata": "K4",
+    "icao": "CKS"
+  },
+  "flight": {
+    "number": "601",
+    "iata": "K4601",
+    "icao": "CKS601",
+    "codeshared": null
+  },
+  "aircraft": {
+    "registration": "N741CK",
+    "iata": "B744",
+    "icao": "B744",
+    "icao24": "A9F67D"
+  },
+  "live": {
+    "updated": "2025-05-21T14:57:47+00:00",
+    "latitude": 50.6804,
+    "longitude": -105.981,
+    "altitude": 11887.2,
+    "direction": 125,
+    "speed_horizontal": 875.996,
+    "speed_vertical": 0,
+    "is_ground": false
+  }
+}
