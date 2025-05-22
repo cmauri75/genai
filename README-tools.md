@@ -11,5 +11,5 @@
    9. Canva ->  crei immagini da testo
    10. Suno.com -> musica
 6. Esempio di notebook per effettuare trascrizione test di video yt usando whisper di openai: https://colab.research.google.com/drive/1wnil7Bo84XtPvNnPqKdtIfcbbnoUChL-?usp=sharing&authuser=0#scrollTo=VLgZy21VX0Gr
-7. 
+7. Google flow. Permette di creare short cinematografici molto realistici. Per ora solo per utenti premium
 

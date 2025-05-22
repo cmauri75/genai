@@ -7,8 +7,8 @@ Playgroung for OpenAI, langchain and so on
     *  OpenAI project: esempio python di chiamata
 
 1.LangChain: libreria per semplificare l'utilizzo degli LLM
-* Seguire: https://nanonets.com/blog/langchain/#understanding-langchain
 * Usare langchain to create a simple chatbot
+* Fai funzionare questo RAG https://smith.langchain.com/hub/rajkstats/finance-rag-prompt-non-reasoning
 * Usare langchain to create a simple chatbot with local document retriever
 
 
