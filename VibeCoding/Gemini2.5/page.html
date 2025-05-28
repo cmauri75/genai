@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisi Interattiva Fatture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Visualization & Content Choices:
+        - File Upload: Standard HTML input type="file". Goal: Data input. Interaction: User selects file. Justification: Standard, universally understood. Method: HTML, JS for handling.
+        - Filters (Email, Stato, Data Fattura, Data Scadenza): Selects/date inputs. Goal: Data segmentation. Interaction: User selects filter criteria. Justification: Standard UI controls for filtering. Method: HTML, JS for logic and updates.
+        - KPIs (Tot Fatture, Tot Importo, % Saldate, etc.): Text elements. Goal: Quick overview of key metrics. Interaction: Dynamically updates with filters. Justification: Immediate summary. Method: HTML, JS for calculation and DOM update.
+        - Chart - Distribuzione Stato Pagamento: Pie Chart. Goal: Show proportion of paid/unpaid invoices. Interaction: Tooltips on hover. Justification: Effective for part-to-whole comparisons. Library: Chart.js (Canvas).
+        - Chart - Andamento Importi Fatturati nel Tempo: Bar Chart (monthly). Goal: Show trends in invoice amounts over time. Interaction: Tooltips on hover. Justification: Good for comparing discrete time periods. Library: Chart.js (Canvas).
+        - Data Table: HTML table. Goal: Detailed view of filtered data. Interaction: Sorting, pagination. Justification: Standard for displaying tabular data. Method: HTML, JS for population, sorting, pagination.
+        - Download Button: HTML button. Goal: Export filtered data. Interaction: User clicks to download CSV. Justification: Common requirement for data analysis. Method: HTML, JS for CSV generation and download.
+        CONFIRMING NO SVG/Mermaid. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Tailwind's slate-50 / light gray */
+        }
+        .sidebar {
+            background-color: #ffffff; /* White sidebar */
+            border-right: 1px solid #e5e7eb; /* Tailwind's gray-200 */
+        }
+        .kpi-card {
+            background-color: #ffffff;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); /* shadow-md */
+            padding: 1rem; /* p-4 */
+            transition: all 0.3s ease-in-out;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* shadow-lg */
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem; /* rounded-md */
+            font-weight: 500; /* medium */
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0284c7; /* sky-600 */
+        }
+        .btn-secondary {
+            background-color: #e2e8f0; /* slate-200 */
+            color: #1e293b; /* slate-800 */
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e1; /* slate-300 */
+        }
+        /* Specific styling for chart containers to meet requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px; /* Example max-width, adjust as needed */
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px; /* Tailwind h-80, example base height */
+            max-height: 400px; /* Example max-height */
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 384px; /* Tailwind h-96 */
+            }
+        }
+        /* Custom scrollbar for table container if needed */
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* slate-300 */
+            border-radius: 10px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; /* slate-400 */
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 90%;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+<div class="flex flex-col md:flex-row min-h-screen">
+    <aside class="w-full md:w-72 lg:w-80 sidebar p-6 space-y-6 flex-shrink-0">
+        <div>
+            <h1 class="text-2xl font-bold text-sky-600">Analisi Fatture</h1>
+            <p class="text-sm text-slate-500 mt-1">Carica e analizza i tuoi dati di fatturazione.</p>
+        </div>
+
+        <section>
+            <h2 class="text-lg font-semibold mb-2 text-slate-700">1. Carica File CSV</h2>
+            <input type="file" id="csvFile" accept=".csv" class="block w-full text-sm text-slate-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-sky-50 file:text-sky-700
+                    hover:file:bg-sky-100
+                    cursor-pointer
+                ">
+            <p id="fileError" class="text-red-500 text-xs mt-1"></p>
+            <p id="fileNameDisplay" class="text-xs text-slate-500 mt-1 truncate"></p>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold mb-3 text-slate-700">2. Filtri</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="filterEmail" class="block text-sm font-medium text-slate-600 mb-1">Email Cliente</label>
+                    <select id="filterEmail" class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 text-sm">
+                        <option value="Tutte le Email">Tutte le Email</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filterStato" class="block text-sm font-medium text-slate-600 mb-1">Stato Pagamento</label>
+                    <select id="filterStato" class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 text-sm">
+                        <option value="Tutte">Tutte</option>
+                        <option value="Saldata">Saldata</option>
+                        <option value="Non saldata">Non Saldata</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Data Fattura</label>
+                    <select id="filterDataFatturaCond" class="w-full p-2 mb-1 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 text-sm">
+                        <option value="any">Qualsiasi</option>
+                        <option value="before">Prima del</option>
+                        <option value="after">Dopo il</option>
+                        <option value="between">Tra</option>
+                        <option value="equal">Uguale a</option>
+                    </select>
+                    <input type="date" id="filterDataFattura1" class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 text-sm hidden">
+                    <input type="date" id="filterDataFattura2" class="w-full p-2 mt-1 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 text-sm hidden">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Data Scadenza</option>
+                        <select id="filterDataScadenzaCond" class="w-full p-2 mb-1 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 text-sm">
+                            <option value="any">Qualsiasi</option>
+                            <option value="before">Prima del</option>
+                            <option value="after">Dopo il</option>
+                            <option value="between">Tra</option>
+                            <option value="equal">Uguale a</option>
+                        </select>
+                        <input type="date" id="filterDataScadenza1" class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 text-sm hidden">
+                        <input type="date" id="filterDataScadenza2" class="w-full p-2 mt-1 border border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 text-sm hidden">
+                </div>
+                <div class="flex space-x-2">
+                    <button id="applyFilters" class="btn btn-primary flex-1 text-sm">Applica Filtri</button>
+                    <button id="resetFilters" class="btn btn-secondary flex-1 text-sm">Resetta</button>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-semibold mb-2 text-slate-700">3. Azioni</h2>
+            <button id="downloadCSV" class="w-full btn btn-primary text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download CSV Filtrato
+            </button>
+        </section>
+    </aside>
+
+    <main class="flex-1 p-6 md:p-8 lg:p-10 bg-slate-100 overflow-y-auto">
+        <div id="welcomeMessage" class="text-center py-12">
+            <h2 class="text-3xl font-semibold text-slate-700 mb-4">Benvenuto!</h2>
+            <p class="text-slate-500 max-w-md mx-auto">Carica un file CSV contenente i dati delle tue fatture per iniziare l'analisi. Assicurati che il file abbia le seguenti colonne: <code class="bg-slate-200 text-slate-700 px-1 py-0.5 rounded text-xs">Email, Numero Fattura, Importo, Data Fattura, Stato, Data Scadenza</code>. Il formato data atteso è <code class="bg-slate-200 text-slate-700 px-1 py-0.5 rounded text-xs">AAAA-MM-GG</code>.</p>
+        </div>
+
+        <div id="dashboardContent" class="hidden space-y-8">
+            <div>
+                <h2 class="text-2xl font-semibold text-slate-700 mb-2">Dashboard Riepilogativa</h2>
+                <p class="text-sm text-slate-500">Questa sezione fornisce una panoramica dei tuoi dati di fatturazione basata sui filtri applicati. Gli indicatori chiave (KPI) offrono un riassunto numerico immediato, mentre i grafici visualizzano la distribuzione degli stati di pagamento e l'andamento degli importi nel tempo.</p>
+            </div>
+
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <div class="kpi-card">
+                    <h3 class="text-sm font-medium text-slate-500">Totale Fatture</h3>
+                    <p id="kpiTotFatture" class="text-3xl font-bold text-sky-600">0</p>
+                </div>
+                <div class="kpi-card">
+                    <h3 class="text-sm font-medium text-slate-500">Importo Totale</h3>
+                    <p id="kpiImpTotale" class="text-3xl font-bold text-sky-600">€0.00</p>
+                </div>
+                <div class="kpi-card">
+                    <h3 class="text-sm font-medium text-slate-500">Fatture Saldate</h3>
+                    <p id="kpiTotSaldate" class="text-3xl font-bold text-green-600">0</p>
+                    <p id="kpiPercSaldate" class="text-xs text-slate-500">(0%)</p>
+                </div>
+                <div class="kpi-card">
+                    <h3 class="text-sm font-medium text-slate-500">Fatture Non Saldate</h3>
+                    <p id="kpiTotNonSaldate" class="text-3xl font-bold text-amber-600">0</p>
+                    <p id="kpiImpNonSaldate" class="text-xs text-slate-500">€0.00</p>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-3">Distribuzione Stato Pagamento</h3>
+                    <div class="chart-container">
+                        <canvas id="statoPagamentoChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 text-center">Questo grafico mostra la proporzione di fatture saldate e non saldate.</p>
+                </div>
+                <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-3">Andamento Importi Fatturati (Mensile)</h3>
+                    <div class="chart-container">
+                        <canvas id="andamentoImportiChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 text-center">Questo grafico mostra l'importo totale fatturato per mese.</p>
+                </div>
+            </section>
+
+            <section>
+                <div>
+                    <h2 class="text-2xl font-semibold text-slate-700 mb-2">Dettaglio Fatture</h2>
+                    <p class="text-sm text-slate-500 mb-4">Esplora i dettagli delle singole fatture che corrispondono ai criteri di filtro attuali. Puoi ordinare i dati cliccando sulle intestazioni delle colonne e navigare tra le pagine.</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="table-container overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                            <tr>
+                                <th scope="col" data-sort="Email" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer">Email</th>
+                                <th scope="col" data-sort="Numero Fattura" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer">Numero Fattura</th>
+                                <th scope="col" data-sort="Importo" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer">Importo</th>
+                                <th scope="col" data-sort="Data Fattura" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer">Data Fattura</th>
+                                <th scope="col" data-sort="Stato" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer">Stato</th>
+                                <th scope="col" data-sort="Data Scadenza" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer">Data Scadenza</th>
+                            </tr>
+                            </thead>
+                            <tbody id="dataTableBody" class="bg-white divide-y divide-slate-200">
+                            <tr><td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-center">Nessun dato da visualizzare. Carica un file CSV o modifica i filtri.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="paginationControls" class="px-6 py-3 bg-slate-50 flex items-center justify-between border-t border-slate-200">
+                        <span id="tableRowCount" class="text-sm text-slate-600">0 righe</span>
+                        <div>
+                            <button id="prevPage" class="btn btn-secondary btn-sm mr-1 text-xs" disabled>&lt; Prec</button>
+                            <span id="currentPage" class="text-sm text-slate-600 mx-2">Pagina 1</span>
+                            <button id="nextPage" class="btn btn-secondary btn-sm ml-1 text-xs" disabled>Succ &gt;</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<div id="messageModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3 id="modalTitle" class="text-lg font-medium leading-6 text-slate-900 mb-2">Messaggio</h3>
+        <p id="modalMessage" class="text-sm text-slate-500 mb-4"></p>
+        <button id="modalCloseButton" class="btn btn-primary w-full">OK</button>
+    </div>
+</div>
+
+<script>
+    let allData = [];
+    let filteredData = [];
+    let statoPagamentoChart = null;
+    let andamentoImportiChart = null;
+
+    const ITEMS_PER_PAGE = 10;
+    let currentPageNumber = 1;
+    let sortColumn = null;
+    let sortDirection = 'asc';
+
+    const csvFileInput = document.getElementById('csvFile');
+    const fileError = document.getElementById('fileError');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    const dashboardContent = document.getElementById('dashboardContent');
+
+    const filterEmail = document.getElementById('filterEmail');
+    const filterStato = document.getElementById('filterStato');
+    const filterDataFatturaCond = document.getElementById('filterDataFatturaCond');
+    const filterDataFattura1 = document.getElementById('filterDataFattura1');
+    const filterDataFattura2 = document.getElementById('filterDataFattura2');
+    const filterDataScadenzaCond = document.getElementById('filterDataScadenzaCond');
+    const filterDataScadenza1 = document.getElementById('filterDataScadenza1');
+    const filterDataScadenza2 = document.getElementById('filterDataScadenza2');
+
+    const applyFiltersButton = document.getElementById('applyFilters');
+    const resetFiltersButton = document.getElementById('resetFilters');
+    const downloadCSVButton = document.getElementById('downloadCSV');
+
+    const kpiTotFatture = document.getElementById('kpiTotFatture');
+    const kpiImpTotale = document.getElementById('kpiImpTotale');
+    const kpiTotSaldate = document.getElementById('kpiTotSaldate');
+    const kpiPercSaldate = document.getElementById('kpiPercSaldate');
+    const kpiTotNonSaldate = document.getElementById('kpiTotNonSaldate');
+    const kpiImpNonSaldate = document.getElementById('kpiImpNonSaldate');
+
+    const dataTableBody = document.getElementById('dataTableBody');
+    const prevPageButton = document.getElementById('prevPage');
+    const nextPageButton = document.getElementById('nextPage');
+    const currentPageDisplay = document.getElementById('currentPage');
+    const tableRowCount = document.getElementById('tableRowCount');
+
+    const messageModal = document.getElementById('messageModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalCloseButton = document.getElementById('modalCloseButton');
+
+    function showModal(title, message) {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        messageModal.classList.remove('hidden');
+    }
+
+    modalCloseButton.addEventListener('click', () => {
+        messageModal.classList.add('hidden');
+    });
+
+
+    // Helper to format currency
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
+    };
+
+    // Helper to parse date in AAAA-MM-GG format
+    const parseDate = (dateString) => {
+        if (!dateString) return null;
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            return new Date(parts[0], parts[1] - 1, parts[2]); // Month is 0-indexed
+        }
+        return null;
+    };
+
+    // Date filter input visibility logic
+    function setupDateFilterVisibility(condElement, date1Element, date2Element) {
+        condElement.addEventListener('change', () => {
+            const cond = condElement.value;
+            date1Element.classList.add('hidden');
+            date2Element.classList.add('hidden');
+            if (cond === 'before' || cond === 'after' || cond === 'equal') {
+                date1Element.classList.remove('hidden');
+            } else if (cond === 'between') {
+                date1Element.classList.remove('hidden');
+                date2Element.classList.remove('hidden');
+            }
+        });
+    }
+    setupDateFilterVisibility(filterDataFatturaCond, filterDataFattura1, filterDataFattura2);
+    setupDateFilterVisibility(filterDataScadenzaCond, filterDataScadenza1, filterDataScadenza2);
+
+
+    csvFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            fileNameDisplay.textContent = `File selezionato: ${file.name}`;
+            fileError.textContent = '';
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const text = e.target.result;
+                    parseCSV(text);
+                    welcomeMessage.classList.add('hidden');
+                    dashboardContent.classList.remove('hidden');
+                    applyAllFilters();
+                } catch (error) {
+                    console.error("Errore nel parsing del CSV:", error);
+                    fileError.textContent = 'Errore nel formato del file CSV.';
+                    showModal('Errore File', 'Il file CSV non è formattato correttamente o mancano colonne attese. Assicurati che le colonne siano: Email, Numero Fattura, Importo, Data Fattura, Stato, Data Scadenza e che le date siano nel formato AAAA-MM-GG.');
+                    fileNameDisplay.textContent = '';
+                    welcomeMessage.classList.remove('hidden');
+                    dashboardContent.classList.add('hidden');
+                    allData = [];
+                    filteredData = [];
+                    populateEmailFilter([]); // Clear email filter on error
+                }
+            };
+            reader.readAsText(file);
+        } else {
+            fileNameDisplay.textContent = '';
+            populateEmailFilter([]); // Clear email filter if no file selected
+        }
+    });
+
+    function populateEmailFilter(data) {
+        const emails = [...new Set(data.map(row => row['Email']))].sort();
+        filterEmail.innerHTML = '<option value="Tutte le Email">Tutte le Email</option>'; // Default option
+        emails.forEach(email => {
+            const option = document.createElement('option');
+            option.value = email;
+            option.textContent = email;
+            filterEmail.appendChild(option);
+        });
+    }
+
+    function parseCSV(text) {
+        const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
+        if (lines.length < 2) {
+            throw new Error("Il file CSV è vuoto o contiene solo l'intestazione.");
+        }
+
+        const header = lines[0].split(',').map(h => h.trim());
+        const expectedHeaders = ["Email", "Numero Fattura", "Importo", "Data Fattura", "Stato", "Data Scadenza"];
+        const headerMap = {};
+
+        expectedHeaders.forEach(eh => {
+            const index = header.findIndex(h => h.toLowerCase() === eh.toLowerCase());
+            if (index === -1) throw new Error(`Colonna attesa non trovata: ${eh}`);
+            headerMap[eh] = index;
+        });
+
+        allData = lines.slice(1).map(line => {
+            const values = line.split(',');
+            const row = {};
+            try {
+                row['Email'] = values[headerMap['Email']].trim();
+                row['Numero Fattura'] = values[headerMap['Numero Fattura']].trim();
+                row['Importo'] = parseFloat(values[headerMap['Importo']].trim());
+                if (isNaN(row['Importo'])) throw new Error('Importo non valido');
+
+                const dataFatturaStr = values[headerMap['Data Fattura']].trim();
+                row['Data Fattura'] = dataFatturaStr; // Store as string for display
+                row['_DataFatturaDate'] = parseDate(dataFatturaStr); // Store as Date object for filtering/sorting
+                if (!row['_DataFatturaDate']) throw new Error('Data Fattura non valida: ' + dataFatturaStr);
+
+                row['Stato'] = values[headerMap['Stato']].trim();
+
+                const dataScadenzaStr = values[headerMap['Data Scadenza']].trim();
+                row['Data Scadenza'] = dataScadenzaStr; // Store as string for display
+                row['_DataScadenzaDate'] = parseDate(dataScadenzaStr); // Store as Date object for filtering/sorting
+                if (!row['_DataScadenzaDate']) throw new Error('Data Scadenza non valida: ' + dataScadenzaStr);
+
+                return row;
+            } catch (parseRowError) {
+                console.error("Errore nel parsing della riga:", line, parseRowError);
+                throw new Error(`Errore nella riga: "${line}". Dettaglio: ${parseRowError.message}`);
+            }
+        });
+        if (allData.length === 0) {
+            throw new Error("Nessun dato valido trovato nel CSV dopo l'intestazione.");
+        }
+        populateEmailFilter(allData); // Populate email filter after successful parsing
+    }
+
+    function applyAllFilters() {
+        if (allData.length === 0) {
+            updateDashboard([]);
+            sortAndRenderTable(); // Corrected function call
+            return;
+        }
+
+        filteredData = allData.filter(row => {
+            // Email filter
+            const emailSelected = filterEmail.value;
+            if (emailSelected !== "Tutte le Email" && row['Email'] !== emailSelected) {
+                return false;
+            }
+
+            // Stato filter
+            const statoSelected = filterStato.value;
+            if (statoSelected !== "Tutte" && row['Stato'] !== statoSelected) {
+                return false;
+            }
+
+            // Data Fattura filter
+            const dfCond = filterDataFatturaCond.value;
+            const dfVal1 = filterDataFattura1.value ? parseDate(filterDataFattura1.value) : null;
+            const dfVal2 = filterDataFattura2.value ? parseDate(filterDataFattura2.value) : null;
+            if (dfCond !== "any" && row['_DataFatturaDate']) {
+                const rowDate = row['_DataFatturaDate'];
+                if (dfCond === "before" && dfVal1 && !(rowDate < dfVal1)) return false;
+                if (dfCond === "after" && dfVal1 && !(rowDate > dfVal1)) return false;
+                if (dfCond === "equal" && dfVal1 && rowDate.getTime() !== dfVal1.getTime()) return false;
+                if (dfCond === "between" && dfVal1 && dfVal2 && !(rowDate >= dfVal1 && rowDate <= dfVal2)) return false;
+            } else if (dfCond !== "any" && !row['_DataFatturaDate']) {
+                return false;
+            }
+
+
+            // Data Scadenza filter
+            const dsCond = filterDataScadenzaCond.value;
+            const dsVal1 = filterDataScadenza1.value ? parseDate(filterDataScadenza1.value) : null;
+            const dsVal2 = filterDataScadenza2.value ? parseDate(filterDataScadenza2.value) : null;
+
+            if (dsCond !== "any" && row['_DataScadenzaDate']) {
+                const rowDate = row['_DataScadenzaDate'];
+                if (dsCond === "before" && dsVal1 && !(rowDate < dsVal1)) return false;
+                if (dsCond === "after" && dsVal1 && !(rowDate > dsVal1)) return false;
+                if (dsCond === "equal" && dsVal1 && rowDate.getTime() !== dsVal1.getTime()) return false;
+                if (dsCond === "between" && dsVal1 && dsVal2 && !(rowDate >= dsVal1 && rowDate <= dsVal2)) return false;
+            } else if (dsCond !== "any" && !row['_DataScadenzaDate']) {
+                return false;
+            }
+
+            return true;
+        });
+
+        currentPageNumber = 1;
+        sortAndRenderTable();
+        updateDashboard(filteredData);
+    }
+
+    applyFiltersButton.addEventListener('click', applyAllFilters);
+
+    resetFiltersButton.addEventListener('click', () => {
+        filterEmail.value = "Tutte le Email";
+        filterStato.value = "Tutte";
+        filterDataFatturaCond.value = "any";
+        filterDataFattura1.value = "";
+        filterDataFattura2.value = "";
+        filterDataScadenzaCond.value = "any";
+        filterDataScadenza1.value = "";
+        filterDataScadenza2.value = "";
+
+        filterDataFatturaCond.dispatchEvent(new Event('change'));
+        filterDataScadenzaCond.dispatchEvent(new Event('change'));
+
+        applyAllFilters();
+    });
+
+    function updateDashboard(data) {
+        const totalFatture = data.length;
+        const impTotale = data.reduce((sum, row) => sum + row['Importo'], 0);
+        const saldate = data.filter(row => row['Stato'] === "Saldata");
+        const nonSaldate = data.filter(row => row['Stato'] === "Non saldata"); // Corrected value
+        const totalSaldate = saldate.length;
+        const impSaldate = saldate.reduce((sum, row) => sum + row['Importo'], 0);
+        const totalNonSaldate = nonSaldate.length;
+        const impNonSaldate = nonSaldate.reduce((sum, row) => sum + row['Importo'], 0);
+        const percSaldate = totalFatture > 0 ? (totalSaldate / totalFatture) * 100 : 0;
+
+        kpiTotFatture.textContent = totalFatture;
+        kpiImpTotale.textContent = formatCurrency(impTotale);
+        kpiTotSaldate.textContent = totalSaldate;
+        kpiPercSaldate.textContent = `(${percSaldate.toFixed(1)}%)`;
+        kpiTotNonSaldate.textContent = totalNonSaldate;
+        kpiImpNonSaldate.textContent = `${formatCurrency(impNonSaldate)}`;
+
+        updateStatoPagamentoChart(totalSaldate, totalNonSaldate);
+        updateAndamentoImportiChart(data);
+    }
+
+    function updateStatoPagamentoChart(saldateCount, nonSaldateCount) {
+        const ctx = document.getElementById('statoPagamentoChart').getContext('2d');
+        if (statoPagamentoChart) {
+            statoPagamentoChart.destroy();
+        }
+        statoPagamentoChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Saldate', 'Non Saldate'],
+                datasets: [{
+                    label: 'Stato Pagamento',
+                    data: [saldateCount, nonSaldateCount],
+                    backgroundColor: [
+                        'rgba(22, 163, 74, 0.7)',
+                        'rgba(217, 119, 6, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(22, 163, 74, 1)',
+                        'rgba(217, 119, 6, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function formatLabelText(text, maxLength = 16) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength - 3) + '...';
+    }
+
+    function updateAndamentoImportiChart(data) {
+        const monthlyData = {};
+        data.forEach(row => {
+            if (row['_DataFatturaDate']) {
+                const monthYear = `${row['_DataFatturaDate'].getFullYear()}-${String(row['_DataFatturaDate'].getMonth() + 1).padStart(2, '0')}`;
+                monthlyData[monthYear] = (monthlyData[monthYear] || 0) + row['Importo'];
+            }
+        });
+
+        const sortedMonths = Object.keys(monthlyData).sort();
+        const labels = sortedMonths.map(my => {
+            const [year, month] = my.split('-');
+            return `${new Date(year, month-1).toLocaleString('it-IT', { month: 'short' })} ${year.slice(-2)}`;
+        });
+        const chartData = sortedMonths.map(month => monthlyData[month]);
+
+        const ctx = document.getElementById('andamentoImportiChart').getContext('2d');
+        if (andamentoImportiChart) {
+            andamentoImportiChart.destroy();
+        }
+        andamentoImportiChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Importo Fatturato',
+                    data: chartData,
+                    backgroundColor: 'rgba(14, 165, 233, 0.7)',
+                    borderColor: 'rgba(14, 165, 233, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            callback: function(value, index, ticks) {
+                                return formatLabelText(this.getLabelForValue(value));
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += formatCurrency(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderTable(dataToRender) {
+        dataTableBody.innerHTML = '';
+        if (dataToRender.length === 0) {
+            dataTableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-center">Nessun dato corrisponde ai filtri selezionati.</td></tr>';
+            updatePaginationControls(0);
+            return;
+        }
+
+        const startIndex = (currentPageNumber - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const pageData = dataToRender.slice(startIndex, endIndex);
+
+        pageData.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.classList.add('hover:bg-slate-50');
+            tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${row['Email']}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${row['Numero Fattura']}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 text-right">${formatCurrency(row['Importo'])}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${row['Data Fattura']}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${row['Stato'] === 'Saldata' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
+                            ${row['Stato']}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">${row['Data Scadenza']}</td>
+                `;
+            dataTableBody.appendChild(tr);
+        });
+        updatePaginationControls(dataToRender.length);
+    }
+
+    function sortAndRenderTable() {
+        if (sortColumn) {
+            filteredData.sort((a, b) => {
+                let valA = a[sortColumn];
+                let valB = b[sortColumn];
+
+                if (sortColumn === 'Data Fattura') {
+                    valA = a['_DataFatturaDate'];
+                    valB = b['_DataFatturaDate'];
+                } else if (sortColumn === 'Data Scadenza') {
+                    valA = a['_DataScadenzaDate'];
+                    valB = b['_DataScadenzaDate'];
+                }
+
+
+                if (typeof valA === 'string') {
+                    valA = valA.toLowerCase();
+                    valB = valB.toLowerCase();
+                } else if (valA instanceof Date && valB instanceof Date) {
+                    if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                }
+
+
+                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        renderTable(filteredData);
+    }
+
+    document.querySelectorAll('th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+            const newSortColumn = th.dataset.sort;
+            if (sortColumn === newSortColumn) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = newSortColumn;
+                sortDirection = 'asc';
+            }
+            document.querySelectorAll('th[data-sort]').forEach(header => {
+                header.classList.remove('sorted-asc', 'sorted-desc');
+                if(header.dataset.sort === sortColumn) {
+                    // Visual feedback for sorting can be added here
+                }
+            });
+            sortAndRenderTable();
+        });
+    });
+
+
+    function updatePaginationControls(totalItems) {
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+        currentPageDisplay.textContent = `Pagina ${currentPageNumber} di ${totalPages > 0 ? totalPages : 1}`;
+        tableRowCount.textContent = `${totalItems} righe`;
+
+        prevPageButton.disabled = currentPageNumber === 1;
+        nextPageButton.disabled = currentPageNumber === totalPages || totalPages === 0;
+    }
+
+    prevPageButton.addEventListener('click', () => {
+        if (currentPageNumber > 1) {
+            currentPageNumber--;
+            sortAndRenderTable();
+        }
+    });
+
+    nextPageButton.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+        if (currentPageNumber < totalPages) {
+            currentPageNumber++;
+            sortAndRenderTable();
+        }
+    });
+
+
+    downloadCSVButton.addEventListener('click', () => {
+        if (filteredData.length === 0) {
+            showModal('Download CSV', 'Nessun dato da scaricare. Applica filtri differenti o carica un file.');
+            return;
+        }
+        const headers = Object.keys(filteredData[0]).filter(h => !h.startsWith('_'));
+        const csvContent = [
+            headers.join(','),
+            ...filteredData.map(row => headers.map(header => {
+                let value = row[header];
+                if (typeof value === 'string' && value.includes(',')) {
+                    return `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            }).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[-T:]/g, '');
+        link.setAttribute('download', `fatture_filtrate_${timestamp}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showModal('Download CSV', 'Il file CSV con i dati filtrati è stato generato.');
+    });
+
+    // Initial setup
+    applyAllFilters();
+    populateEmailFilter([]); // Initialize email filter as empty
+
+</script>
+</body>
+</html>

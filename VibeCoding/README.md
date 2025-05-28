@@ -31,6 +31,9 @@ Crea un solo file js vanilla contenente tutto
 ### Cloud run via Gemini
 "Crea una applicazione spring boot che espone un servizio rest /api/log che riceve un parametro di nome param nella request, quindi crea un file json nella directory /mnt/logs contenente la data e ora della richiesta e il contenuto di tale parametro. Crea inoltre un file docker per generare una macchina eseguibile e uno script per pubblicare su dockerhub tale macchina. Crea anche uno script per deployare la macchina su cloudrun"
 
-
 ## Casi d'uso
 * Posso specificare un repo con un'app e chiedergli di trasformarla, ad esempio crearmi una UI
+
+
+## Gemini 2.5
+Creo un'app per lavorare su file excel e lo trasforma in un'app
