@@ -1,9 +1,9 @@
 from typing import List
 
-from langchain_openai.llms import OpenAI
-from langchain.prompts import PromptTemplate
-from pydantic import BaseModel, Field, validator, field_validator
 from langchain.output_parsers import PydanticOutputParser
+from langchain.prompts import PromptTemplate
+from langchain_openai.llms import OpenAI
+from pydantic import BaseModel, Field, field_validator
 
 # Initialize the language model
 model = OpenAI(temperature=0.0)
@@ -19,6 +19,7 @@ class Joke(BaseModel):
             raise ValueError("Domanda mal formattata, manca il '?' finale!")
         return field
 
+
 # Set up a PydanticOutputParser
 parser = PydanticOutputParser(pydantic_object=Joke)
 
@@ -31,7 +32,6 @@ prompt = PromptTemplate(
 
 # Define a query to prompt the language model
 query = "Raccontami una barzelletta."
-
 
 # Combine prompt, model, and parser to get structured output
 prompt_and_model = prompt | model
@@ -49,9 +49,11 @@ class CryptoCurrencySummary(BaseModel):
     high: float
     low: float
 
+
 class Summary(BaseModel):
     date: str
     crypto_currencies: List[CryptoCurrencySummary]
+
 
 parser = PydanticOutputParser(pydantic_object=Summary)
 

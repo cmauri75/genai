@@ -19,4 +19,13 @@ python LLM.py
 python ChatModel.py
 python Template.py
 
+python Parser-PydanticOutputParser.py
+python Parser-SimpleJsonOutputParser.py
+python Parser-CommaSeparatedListOutputParser.py
+python Parser-DocumentLoader.py
+
+python Embeddings.py
+
+python Chroma.py
 ```
+

@@ -1,0 +1,38 @@
+[
+  {},
+  {
+    'data_nascita': ''
+  },
+  {
+    'data_nascita': '7'
+  },
+  {
+    'data_nascita': '7 marzo'
+  },
+  {
+    'data_nascita': '7 marzo 178'
+  },
+  {
+    'data_nascita': '7 marzo 1785'
+  },
+  {
+    'data_nascita': '7 marzo 1785',
+    'luogo_nascita': ''
+  },
+  {
+    'data_nascita': '7 marzo 1785',
+    'luogo_nascita': 'Mil'
+  },
+  {
+    'data_nascita': '7 marzo 1785',
+    'luogo_nascita': 'Milano'
+  },
+  {
+    'data_nascita': '7 marzo 1785',
+    'luogo_nascita': 'Milano,'
+  },
+  {
+    'data_nascita': '7 marzo 1785',
+    'luogo_nascita': 'Milano, Italia'
+  }
+]

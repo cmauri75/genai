@@ -9,7 +9,7 @@
 
 In poche parole con LangChain, scrivi le tue applicazioni utilizzando le librerie e facendo riferimento ai template come guida. LangSmith ti aiuta poi a ispezionare, testare e monitorare le tue catene. Infine, con LangServe puoi facilmente trasformare qualsiasi catena in un'API, rendendo il deployment semplice e immediato.
 
-## Crezione modelli
+## Creazione modelli
 I modelli vengono creati tramite moduli, che possono essere standalone o composti, le tipologie sono:
 1. Model I/O: facilita l'interazione con vari modelli linguistici, gestendo in modo efficiente gli input e gli output.
 1.Retrieval: consente l'accesso e l'interazione con i dati specifici del l'applicazione, il che è essenziale per un uso dinamico dei dati.
@@ -69,10 +69,36 @@ Nel caso dei ChatModel i prompt sono più strutturati in quanto devo descrivere 
 Vedi `Template.py`
 
 ### Output parser
-Sono una parte fondamentale di LangChain, in quanto consentono di estrarre e formattare le informazioni dagli output dei modelli di linguaggio.
+Sono una parte fondamentale di LangChain, in quanto consentono di estrarre le informazioni dagli output degli LLM formattandoli nel formato voluto.
 
 Alcuni parser comuni includono: PydanticOutputParser, SimpleJsonOutputParser, CommaSeparatedListOutputParser, DatetimeOutputParser, and XMLOutputParser
 
+Vedi esempi Parser-*.py
+
+### Retrieval
+Il Retrieval svolge un ruolo cruciale nelle applicazioni che richiedono dati specifici per l'utente, non inclusi nel set di addestramento del modello. 
+
+Questo processo, noto come Retrieval Augmented Generation (RAG), comporta il recupero di dati esterni e la loro integrazione nel processo di generazione del modello linguistico. 
+
+Ho diverse classi per gestire il recupero dei dati:
+* Document Loaders: Caricano i dati da varie fonti, come file di vari formati, database o API. Ho un centinaio di loader per formati comuni come CSV, JSON, PDF, HTML, e altro. Per alcuni tipi (pdf) ho anche diverse varianti specializzate per gestire meglio il contenuto.
+    In LangChain, i documenti sono rappresentati come oggetti `Document`, che contengono il testo e i metadati associati.
+
+Nell'esempio vado a fare scraping di un sito web e a caricare i dati in un array di Document.
+* Document tranformers: Trasformano i documenti recuperati precedentemente. Split in parti più piccole (RecursiveCharacterTextSplitter, HTMLHeaderTextSplitter), unione, filtraggio, ecc. 
+
+* Text Embedding Models: Creano rappresentazioni vettoriali dei documenti, che possono essere utilizzate per il recupero e la ricerca semantica. Questi modelli convertono il testo in vettori numerici, consentendo l'esecuzione di operazioni quali la ricerca semantica e il clustering.
+Comprendere questi embedding è fondamentale. Ogni pezzo di testo viene convertito in un vettore, la cui dimensione dipende dal modello utilizzato. Ad esempio, i modelli OpenAI producono tipicamente vettori a 1536 dimensioni. 
+Questi embedding vengono poi utilizzati per recuperare informazioni rilevanti.
+
+Vedi l'esempio
+
+* Vector stores: Memorizzano in modo efficente i text embedding, consentendo ricerche efficienti e recupero di informazioni. Langchain supporta 50 vector store. 
+Una volta collegato posso eseguire ricerche di similarità, che restituiscono i documenti più rilevanti in base alla query dell'utente.
+
+* Retrievers: Permettono di cercare documenti in base a una query non strutturata. 
+Utilizzano ma Sono più generali rispetto ai vector store che invece si focalizzano sullo storage.
+Chroma è un esempio di vector db.
 
 
 See: https://nanonets.com/blog/langchain/#understanding-langchain
