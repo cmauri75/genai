@@ -100,6 +100,25 @@ Una volta collegato posso eseguire ricerche di similarità, che restituiscono i 
 Utilizzano ma Sono più generali rispetto ai vector store che invece si focalizzano sullo storage.
 Chroma è un esempio di vector db.
 
+NB: qui fermo la lettura della documentazione in quanto non focalizzata.
+
+# LangGraph
+LangGraph è una libreria che consente di costruire applicazioni AI complesse utilizzando un approccio basato su grafi.
+Vedi `LangGraph-YT/README.md` 
+
+# LangChain4J
+LangChain4J è una libreria Java che consente di costruire applicazioni AI complesse utilizzando un approccio basato su grafi, simile a LangGraph ma per il linguaggio Java.
+Vedi `LangChain4J/README.md`
+
+
+# Altri contenuti
+![RAG](Course/2.RAG.png)
+![RAG](Course/3.RAG.png)
+
+
+
+# Corso langchain su Nanonets
+
 
 See: https://nanonets.com/blog/langchain/#understanding-langchain
 https://nanonets.com/blog/llamaindex/
@@ -122,7 +141,7 @@ Fornisce strumenti e astrazioni per combinare modelli di linguaggio con altre fo
 
 In sintesi, LangChain riduce la complessità dello sviluppo, migliorando la produttività e consentendo di creare applicazioni più potenti e modulari rispetto all'uso diretto delle API di un LLM.
 
-![](Course/1.LangChain.png)
+![LangChain](Course/1.LangChain.png)
 
 * Interfaccia LLM: da un'interfaccia comune per i vari LLM
 * Ruoli: l'interfaccia permette di distinguere gli input. 

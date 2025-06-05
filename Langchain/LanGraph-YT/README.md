@@ -36,3 +36,4 @@ Nodes are parts of graph structures, tools are functionalities used by nodes.
 Just START --> Node --> END
 
 ## 4. Multiple input graph
+## 5. Sequential graph

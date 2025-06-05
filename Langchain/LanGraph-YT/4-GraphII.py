@@ -1,38 +1,38 @@
-#Helloworld graph
-
-from typing import TypedDict, Dict
+from typing import TypedDict, List
 from langgraph.graph import StateGraph
-from rich.jupyter import display
 
-
-# Shared data structure that keeps track of the state of the agent while application is running
+#State
 class AgentState(TypedDict):
-    message: str
+    values: List[int]
+    operator: str
+    name: str
+    result: str
 
-# node, input and output are the state of the agent
-def greeting_node(state: AgentState) -> AgentState:
-    #Doc String, important for documentation and understanding the code, it tells what the function does
-    """A node that sets a greeting message in the state."""
-    state["message"] = "Hello "+state["message"]+", how do you do?"
+#node
+def process_values(state: AgentState) -> AgentState:
+    """Function processes multiple inputs and returns a result."""
+    if 'operator' not in state.keys():
+        state["result"] = f"Hello {state['name']} Operation on inputs: Invalid operator or empty values"
+        return state
+
+    if state["operator"] == "+":
+        res = sum(state["values"])
+    elif state["operator"] == "*":
+        res = 1
+        for value in state["values"]:
+            res *= value
+    state["result"] = f"Hello {state['name']} Operation on inputs: {res}"
     return state
 
-#Create the graph
 graph = StateGraph(AgentState)
-
-#Add nodes
-graph.add_node("greeter",greeting_node)
-
-#define start and end points of the graph
-graph.set_entry_point("greeter")
-graph.set_finish_point("greeter")
-
-#compiles the graph, this is necessary to check for errors and prepare the graph for execution
+graph.add_node("processor",process_values)
+graph.set_entry_point("processor")
+graph.set_finish_point("processor")
 app = graph.compile()
 
-print(app.config_specs)
-
-from IPython.display import Image
-
-Image(app.get_graph().draw_mermaid_png())
-
-app.invoke({"message": "Bob"})  # Invoke the graph with an initial state
+answer1 = app.invoke({"name": "Bob", "values": [2,3,4,5], "operator": "*"})
+answer2 = app.invoke({"name": "Jon", "values": [2,3,4,5], "operator": "+"})
+answer3 = app.invoke({"name": "Jak", "values": [2,3,4,5]})
+print(answer1["result"])
+print(answer2["result"])
+print(answer3["result"])
