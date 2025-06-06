@@ -31,9 +31,21 @@ Nodes are parts of graph structures, tools are functionalities used by nodes.
   * FunctionMessage: represents the result of a function call.
   * ToolMessage: similar to FunctionMessage but specific to tool usage.
 
-## 3. Hello World graph
+## Examples
 
+1. Hello World graph
 Just START --> Node --> END
+2. ----
+3. Simple graph
+4. Simple graph with tool
+5. Simple graph with more nodes
+6. Simple graph with conditional edge
+7. Simple graph with a loop on a node
+8. An agent that behaves as chatbot, with memory and LLM calls
+9. Reasing and Actioning (React) agent
+This is interesting, it uses a graph to reason about the input and then decide which action to take. When I ask to add o subtracting two numbers, it first reasons about the input and then decides to call the calculator tool to perform the operation.
+NB: LLM used docstring to understand wich tool to call, so the docstring is important.
+10. Agent with tools and chat
+This tool is a more complex agent that can handle multiple tools and chat interactions. It uses a graph to manage the flow of conversation and tool usage. It helps to create a document, ask for changes and saves the document to a file when finished.
 
-## 4. Multiple input graph
-## 5. Sequential graph
+NB: 10 is a good template to start building complex agents.
