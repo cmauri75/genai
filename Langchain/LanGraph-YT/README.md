@@ -47,5 +47,6 @@ This is interesting, it uses a graph to reason about the input and then decide w
 NB: LLM used docstring to understand wich tool to call, so the docstring is important.
 10. Agent with tools and chat
 This tool is a more complex agent that can handle multiple tools and chat interactions. It uses a graph to manage the flow of conversation and tool usage. It helps to create a document, ask for changes and saves the document to a file when finished.
+11. RAG with tools
 
 NB: 10 is a good template to start building complex agents.
