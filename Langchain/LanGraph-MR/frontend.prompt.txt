@@ -1,0 +1,12 @@
+Crea una applicazione frontend che permette di interrogare un chatbot, deve avere un campo di testo dove l'utente inserisce le proprie domande e un campo dove vengono mostrate le risposte. Le risposte vengono ottenute tramite l'invocazione di una POST ad un servizio rest esterno a cui bisogna passare questo payload: {
+{
+  "session_id": "12345",
+  "text_input":"Consigliami 3 buoni zaini da alpinismo"
+}
+session_id è un codice univoco numerico di 20 cifre generato nuovo ogni volta in cui si accede all'applicazione.
+gli "\n" nel body vengano mostrati come "a capo" nella chat.
+
+L'applicazione risponderà col seguente payload:
+{
+    "result": "Il primo modello di zaino tuttofare per alpinismo con asole per trasportare"
+}

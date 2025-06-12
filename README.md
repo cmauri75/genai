@@ -10,18 +10,24 @@ Playgroung for OpenAI, langchain and so on
 1. VibeCoding
    * Vedi casi d'uso nella directory omonima
 
+1. LangChain: libreria per semplificare l'utilizzo degli LLM
+   * Casi d'uso nella dir principale
+   * Esempi specifici con uso di LangGraph nella directory `LanGraph-YT`
+   * Esempio semplice di utilizzo dell'implementazione con LangChain4j
+   * Esempio reale per il chatbot di MountainReview con uso di LangGraph nella directory `LanGraph-MR`
+
+1. RAG vs Finetuning
+   * RAG: Es. in cui ho una serie di documenti aziendali (prodotti venduti, manuali, ecc.) e voglio creare un chatbot che risponda a domande su questi documenti.
+      Ho un DB esterno (vettoriale) a cui accinge per aumentare la sua conoscenza. Costa poco e posso aggiornarlo facilmente.
+   * Finetuning: Es. casi in cui serve una conoscenza specifica, ad esempio "traduzione dal klingon", "formattazione testo con un formato particolare proprietario", ...
+   * Posso usare anche entrambi assieme per avere maggiori performance.
+
+1. FineTuning nella dir apposita
+
 ### In progress
 1.LangChain: libreria per semplificare l'utilizzo degli LLM
 * Rivedere LC con indicazioni del libro
-* Usare langchain to create a simple chatbot
 * Fai funzionare questo RAG https://smith.langchain.com/hub/rajkstats/finance-rag-prompt-non-reasoning
-* Usare langchain to create a simple chatbot with local document retriever
-
-### Future Alta priorità
-
-1. Fine tuning di un LLM vedi: https://colab.research.google.com/drive/1gSlIoMO0GXZdCLfg5hSjYbDtJZlAO4ot?usp=sharing
-   2. Bonus: utilizzo colab, notebook di google che fornisce un ambiente di sviluppo in cloud per Python, con GPU gratuite
-2. RAG di un LLM fatto a mano, vedi: https://www.youtube.com/watch?v=SSc_OVJli4Q&list=PLYtHoWz0tONsBorKxQNcRCUoeWj8Ze7wp&index=4&t=464s
 
 
 ### MayBe
